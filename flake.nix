@@ -7,25 +7,51 @@
     erosanix.inputs.nixpkgs.follows = "nixpkgs";
     nix-appimage.url = "github:ralismark/nix-appimage";
     nix-appimage.inputs.nixpkgs.follows = "nixpkgs";
-    nixgl.url = "github:nix-community/nixGL";
-    nixgl.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, erosanix, nix-appimage, nixgl}: {
+  outputs = { self, nixpkgs, erosanix, nix-appimage }: {
 
-    lib.x86_64-linux = let
-      pkgs = import "${nixpkgs}" { system = "x86_64-linux"; };
-      erosanixLib = erosanix.lib.x86_64-linux;
+    packages.x86_64-linux = let
+      system = "x86_64-linux";
+      pkgs = import "${nixpkgs}" { inherit system; };
     in {
-        mkNixGL = pkg: 
-          let
-            wrapper = pkgs.writeShellScript "nixgl-wrapper" ''
-              ${nixgl.packages.x86_64-linux.nixGLDefault}/bin/nixGL "@EXECUTABLE@" "$@"
-            '';
-          in erosanixLib.genericBinWrapper pkg wrapper;
-    };
+      gossip-patchelf = let
+        gossip = erosanix.packages.x86_64-linux.gossip;
+      in pkgs.stdenv.mkDerivation {
+        pname = "gossip-patchelf";
+        version = gossip.version;
+        src = gossip;
+        dontUnpack = true;
+        meta = gossip.meta;
+        dontPatchELF = true;
+        nativeBuildInputs = [ pkgs.patchelf ];
 
-    packages.x86_64-linux.gossip-nixgl = self.lib.x86_64-linux.mkNixGL erosanix.packages.x86_64-linux.gossip;
-    packages.x86_64-linux.gossip-appimage = nix-appimage.bundlers.x86_64-linux.default self.packages.x86_64-linux.gossip-nixgl;
+        buildPhase = ''
+            cp $src/bin/gossip ./
+            chmod u+w gossip
+            patchelf --add-rpath /usr/lib/${system}-gnu:/usr/lib:/lib64:/usr/lib64 ./gossip
+        '';
+
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/bin
+
+          cp ./gossip $out/bin/gossip
+
+          # Symlink the share directory so that .desktop files and such continue to work.
+          if [[ -h $src/share ]]
+          then
+            ln -s $(readlink $src/share) $out/share
+          elif [[ -d $src/share ]]
+          then
+            ln -s $src/share $out/share
+          fi
+
+          runHook postInstall
+        '';
+      };
+
+      gossip-appimage = nix-appimage.bundlers.x86_64-linux.default self.packages.x86_64-linux.gossip-patchelf;
+    };
   };
 }
