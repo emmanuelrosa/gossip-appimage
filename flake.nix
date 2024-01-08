@@ -11,25 +11,26 @@
 
   outputs = { self, nixpkgs, erosanix, nix-appimage }: {
 
+    lib.x86_64-linux = let
+      system = "x86_64-linux";
+      pkgs = import "${nixpkgs}" { inherit system; };
+    in {
+      mkLibraryPath = pkg: (pkgs.symlinkJoin { 
+        name = "${pkg.name}-library-path";
+        paths = builtins.map 
+          (p: pkgs.lib.attrsets.getLib p) 
+          (pkgs.lib.strings.splitString "\n" 
+            (builtins.readFile (pkgs.writeReferencesToFile pkg)));
+      }) + "/lib:/run/opengl-driver/lib:/usr/lib/${system}-gnu:/usr/lib:/lib64:/usr/lib64";
+    };
+
     packages.x86_64-linux = let
       system = "x86_64-linux";
       pkgs = import "${nixpkgs}" { inherit system; };
     in {
+      # This patchelf version is not working.
       gossip-patchelf = let
         gossip = erosanix.packages.x86_64-linux.gossip;
-        removeLibGL = pkgs.writeText "remove-libGL.awk" ''
-          { 
-            for(i = 1; i <= NF; i++) { 
-              if(i != NF) {
-                tchar = ":"
-              } else {
-                tchar = ""
-              }
-
-              if($i !~ /-libGL-/) printf("%s%s", $i, tchar)
-            }
-          }
-          '';
       in pkgs.stdenv.mkDerivation {
         pname = "gossip-patchelf";
         version = gossip.version;
@@ -42,8 +43,7 @@
         buildPhase = ''
             cp $src/bin/gossip ./
             chmod u+w gossip
-            rpath=$(patchelf --print-rpath ./gossip | awk -F ":" -f ${removeLibGL})
-            patchelf --set-rpath $rpath:/usr/lib/${system}-gnu:/usr/lib:/usr/lib/dri:/lib64:/usr/lib64 ./gossip
+            patchelf --set-rpath ${self.lib."${system}".mkLibraryPath gossip} ./gossip
         '';
 
         installPhase = ''
@@ -52,7 +52,6 @@
 
           cp ./gossip $out/bin/gossip
 
-          # Symlink the share directory so that .desktop files and such continue to work.
           if [[ -h $src/share ]]
           then
             ln -s $(readlink $src/share) $out/share
@@ -66,20 +65,14 @@
       };
 
       gossip-ld-library-path = let
-        gossip = erosanix.packages.x86_64-linux.gossip;
+        gossip = erosanix.packages."${system}".gossip;
 
         launcher = pkgs.writeScript "gossip-launcher" ''
           #!${pkgs.bash}/bin/bash
-          LD_LIBRARY_PATH=${libraryPath}/lib:/usr/lib/${system}-gnu:/usr/lib:/lib64:/usr/lib64 ${gossip}/bin/gossip
+          LD_LIBRARY_PATH=${libraryPath} ${gossip}/bin/gossip
         '';
 
-        libraryPath = pkgs.symlinkJoin { 
-          name = "gossip-library-path";
-          paths = builtins.map 
-            (p: pkgs.lib.attrsets.getLib p) 
-            (pkgs.lib.strings.splitString "\n" 
-              (builtins.readFile (pkgs.writeReferencesToFile gossip)));
-        };
+        libraryPath = self.lib."${system}".mkLibraryPath gossip;
       in pkgs.stdenv.mkDerivation {
         pname = "gossip-ld-library-path";
         version = gossip.version;
