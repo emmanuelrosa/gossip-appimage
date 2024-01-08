@@ -17,6 +17,19 @@
     in {
       gossip-patchelf = let
         gossip = erosanix.packages.x86_64-linux.gossip;
+        removeLibGL = pkgs.writeText "remove-libGL.awk" ''
+          { 
+            for(i = 1; i <= NF; i++) { 
+              if(i != NF) {
+                tchar = ":"
+              } else {
+                tchar = ""
+              }
+
+              if($i !~ /-libGL-/) printf("%s%s", $i, tchar)
+            }
+          }
+          '';
       in pkgs.stdenv.mkDerivation {
         pname = "gossip-patchelf";
         version = gossip.version;
@@ -24,12 +37,13 @@
         dontUnpack = true;
         meta = gossip.meta;
         dontPatchELF = true;
-        nativeBuildInputs = [ pkgs.patchelf ];
+        nativeBuildInputs = [ pkgs.patchelf pkgs.gawk ];
 
         buildPhase = ''
             cp $src/bin/gossip ./
             chmod u+w gossip
-            patchelf --add-rpath /usr/lib/${system}-gnu:/usr/lib:/lib64:/usr/lib64 ./gossip
+            rpath=$(patchelf --print-rpath ./gossip | awk -F ":" -f ${removeLibGL})
+            patchelf --set-rpath $rpath:/usr/lib/${system}-gnu:/usr/lib:/usr/lib/dri:/lib64:/usr/lib64 ./gossip
         '';
 
         installPhase = ''
