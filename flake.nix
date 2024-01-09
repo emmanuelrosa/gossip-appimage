@@ -36,10 +36,10 @@
         (builtins.map pkgs.lib.attrsets.getLib) 
       ];
 
-      mkLibraryPath = pkg: (pkgs.symlinkJoin { 
+      mkLibraryPath = pkg: (builtins.concatStringsSep ":" self.lib."${system}".commonLibraryPaths) + ":" + (pkgs.symlinkJoin { 
         name = "${pkg.name}-library-path";
         paths = self.lib."${system}".getPackageReferences pkg;
-      }) + "/lib:" + builtins.concatStringsSep ":" self.lib."${system}".commonLibraryPaths;
+      }) + "/lib";
     };
 
     packages.x86_64-linux = let
