@@ -21,7 +21,7 @@
           (p: pkgs.lib.attrsets.getLib p) 
           (pkgs.lib.strings.splitString "\n" 
             (builtins.readFile (pkgs.writeReferencesToFile pkg)));
-      }) + "/lib:/run/opengl-driver/lib:/usr/lib/${system}-gnu:/usr/lib:/lib64:/usr/lib64";
+      }) + "/lib:/run/opengl-driver/lib:/usr/lib/${system}-gnu:/usr/lib/${system}-gnu/dri:/usr/lib:/lib64:/usr/lib64";
     };
 
     packages.x86_64-linux = let
