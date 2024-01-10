@@ -16,15 +16,7 @@
       pkgs = import "${nixpkgs}" { inherit system; };
       erosanixLib = erosanix.lib."${system}";
     in {
-      mkLibraryPath = pkg: (pkgs.symlinkJoin { 
-        name = "${pkg.name}-library-path";
-        paths = erosanixLib.composeAndApply [
-          pkgs.writeReferencesToFile
-          builtins.readFile 
-          (pkgs.lib.strings.splitString "\n")
-          (builtins.map pkgs.lib.attrsets.getLib) 
-        ] pkg;
-      }) + "/lib:" + builtins.concatStringsSep ":" 
+      commonLibraryPaths = 
         [ "/run/opengl-driver/lib"
           "/run/opengl-driver/lib/dri"
           "/lib"
@@ -33,7 +25,21 @@
           "/usr/lib64"
           "/usr/lib/${system}-gnu"
           "/usr/lib/${system}-gnu/dri"
+          "/lib/${system}-gnu"
+          "/lib/${system}-gnu/dri"
         ];
+
+      getPackageReferences = erosanixLib.composeAndApply [
+        pkgs.writeReferencesToFile
+        builtins.readFile 
+        (pkgs.lib.strings.splitString "\n")
+        (builtins.map pkgs.lib.attrsets.getLib) 
+      ];
+
+      mkLibraryPath = pkg: (pkgs.symlinkJoin { 
+        name = "${pkg.name}-library-path";
+        paths = self.lib."${system}".getPackageReferences pkg;
+      }) + "/lib:" + builtins.concatStringsSep ":" self.lib."${system}".commonLibraryPaths;
     };
 
     packages.x86_64-linux = let
