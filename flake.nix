@@ -86,12 +86,7 @@
         launcher = pkgs.writeScript "gossip-launcher" ''
           #!${pkgs.bash}/bin/bash
 
-          if [ -d /run/opengl-driver ]
-          then
-            ${gossip}/bin/gossip
-          else
-            LD_LIBRARY_PATH=${libraryPath} ${gossip}/bin/gossip
-          fi
+          LD_LIBRARY_PATH=${libraryPath} ${gossip}/bin/gossip
         '';
 
         libraryPath = self.lib."${system}".mkLibraryPath gossip;

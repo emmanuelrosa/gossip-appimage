@@ -26,11 +26,9 @@ This Gossip AppImage has been spotted in the wild running on the following Linux
 
 - Alpine Linux 3.15 [^1]
 - Manjaro
-- NixOS 23.11 [^2]
 - Ubuntu 23.10
 
 [^1]: The AppImage doesn't run on Alpine out-of-the box. You first need to install FUSE and Mesa software rendering `apk add fuse mesa-dri-swrast`) and load the FUSE kernel module (`modprobe fuse`).
-[^2]: Normally AppImages don't run on NixOS, but this one runs out-of-the-box. However, you might as well use the Nix package instead. Ex. `nix run github:emmanuelrosa/erosanix#gossip`
 
 ## How does it work?
 
