@@ -17,9 +17,7 @@
       erosanixLib = erosanix.lib."${system}";
     in {
       commonLibraryPaths = 
-        [ "/run/opengl-driver/lib"
-          "/run/opengl-driver/lib/dri"
-          "/lib"
+        [ "/lib"
           "/lib64"
           "/usr/lib"
           "/usr/lib64"
@@ -82,17 +80,23 @@
         '';
       };
 
-      gossip-ld-library-path = let
+      gossip-lite = let
         gossip = erosanix.packages."${system}".gossip;
 
         launcher = pkgs.writeScript "gossip-launcher" ''
           #!${pkgs.bash}/bin/bash
-          LD_LIBRARY_PATH=${libraryPath} ${gossip}/bin/gossip
+
+          if [ -d /run/opengl-driver ]
+          then
+            ${gossip}/bin/gossip
+          else
+            LD_LIBRARY_PATH=${libraryPath} ${gossip}/bin/gossip
+          fi
         '';
 
         libraryPath = self.lib."${system}".mkLibraryPath gossip;
       in pkgs.stdenv.mkDerivation {
-        pname = "gossip-ld-library-path";
+        pname = "gossip-lite";
         version = gossip.version;
         src = gossip;
         dontUnpack = true;
@@ -117,7 +121,11 @@
         '';
       };
 
-      gossip-appimage = nix-appimage.bundlers.x86_64-linux.default self.packages.x86_64-linux.gossip-ld-library-path;
+      # The gossip-appimage-lite AppImage includes all of Gossip's dependencies except
+      # for OpenGL. When Gossip is executed it will attempt to load its dependencies
+      # from the host Linux distribution, and fallback to using the dependencies in the
+      # AppImage. 
+      gossip-appimage-lite = nix-appimage.bundlers.x86_64-linux.default self.packages.x86_64-linux.gossip-lite;
     };
   };
 }
