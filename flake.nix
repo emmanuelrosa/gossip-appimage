@@ -70,19 +70,33 @@
       erosanixPkgs = erosanix.packages."${system}";
       erosanixLib = erosanix.lib."${system}";
       nanoNixGL = self.nanoNixGL."${system}";
+
+      mkLauncher = { writeScript, bash, nixGL, gossip }: writeScript "gossip-launcher" ''
+        #!${bash}/bin/bash
+
+        ${nixGL "gossip-nixgl" []}/bin/gossip-nixgl ${gossip}/bin/gossip
+      '';
+
+      mkDebugLauncher = { writeScript, bash, nixGL, gossip }: writeScript "gossip-debug-launcher" ''
+        #!${bash}/bin/bash
+
+        echo "Entering a busybox shell running within the AppImage chroot, for debugging."
+        echo "To execute Gossip, run ${nixGL "gossip-nixgl" []}/bin/gossip-nixgl ${gossip}/bin/gossip"
+        echo "Execute 'exit' to terminate the shell and the AppImage."
+
+        export PATH="${pkgs.busybox}/bin:$PATH"
+        ${pkgs.busybox}/bin/busybox ash
+      '';
     in {
       gossip-minimal-nixgl = pkgs.callPackage ({
         stdenv
-        , writeScript
         , bash
+        , writeScript
         , nixGL
         , gossip
-      }:let
-        launcher = writeScript "gossip-launcher" ''
-          #!${bash}/bin/bash
-
-          ${nixGL "gossip-nixgl" []}/bin/gossip-nixgl ${gossip}/bin/gossip
-        '';
+        , mkLauncher
+      }: let
+        launcher = mkLauncher { inherit writeScript bash nixGL gossip; };
       in stdenv.mkDerivation {
         pname = "gossip-minimal-nixgl";
         version = gossip.version;
@@ -107,9 +121,16 @@
 
           runHook postInstall
         '';
-      }) { nixGL = nanoNixGL.nixGL; gossip = erosanixPkgs.gossip; };
+      }) { nixGL = nanoNixGL.nixGL; 
+           gossip = erosanixPkgs.gossip; 
+           inherit mkLauncher; 
+         };
 
-      gossip-minimal-appimage = nix-appimage.bundlers.x86_64-linux.default self.packages.x86_64-linux.gossip-minimal-nixgl;
+      gossip-minimal-appimage = nix-appimage.bundlers."${system}".default self.packages."${system}".gossip-minimal-nixgl;
+
+      gossip-minimal-shell-appimage = nix-appimage.bundlers."${system}".default (self.packages."${system}".gossip-minimal-nixgl.override {
+        mkLauncher = mkDebugLauncher;
+      });
     };
   };
 }
