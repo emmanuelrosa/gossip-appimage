@@ -21,6 +21,7 @@
           "/lib64"
           "/usr/lib"
           "/usr/lib64"
+          "/usr/lib64/llvm16/lib"
           "/usr/lib/${system}-gnu"
           "/usr/lib/${system}-gnu/dri"
           "/lib/${system}-gnu"

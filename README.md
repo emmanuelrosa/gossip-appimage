@@ -25,6 +25,7 @@ Now you can execute the `Gossip-lite.AppImage`!
 This Gossip AppImage has been spotted in the wild running on the following Linux distros:
 
 - Alpine Linux 3.15 [^1]
+- Fedora 39
 - Manjaro
 - Ubuntu 23.10
 
