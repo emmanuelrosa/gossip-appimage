@@ -1,12 +1,13 @@
 # gossip-appimage
 
-This Nix flake can be used to build an AppImage of the [Gossip](https://github.com/mikedilger/gossip) Nostr client. It is designed such that even if you've never used the [Nix](https://nixos.org/) package manager before, you should be able to easily build your own AppImage in a reproducable way.
+This Nix flake can be used to build a fat AppImage of the [Gossip](https://github.com/mikedilger/gossip) Nostr client. It is designed such that even if you've never used the [Nix](https://nixos.org/) package manager before, you should be able to easily build your own AppImage in a reproduceable way.
+
+This repo is currently configured to build an AppImage of Gossip 0.9.0. Ignore the releases! Those are test AppImages. The intention here is for *you* to build your own. Don't worry, it's super easy!
 
 ## All you need is Nix
 
 The only tool you need to install to build the Gossip AppImage is the Nix package manager. The Nix package manager can run on most Linux distributions. If you don't already have Nix installed, with Flakes enabled, I recommend the portable version of Nix by downloading [nix-portable](https://github.com/DavHau/nix-portable). 
 
-nix-portable is a self-extracting version of Nix and it comes with Flakes enabled. In this document I describe how to complete the build using nix-portable.
 
 ## How to build the Gossip AppImage
 
@@ -14,21 +15,50 @@ nix-portable is a self-extracting version of Nix and it comes with Flakes enable
 2. Make `nix-portable` executable: Ex. `chmod u+x ./nix-portable`
 3. Run `./nix-portable nix-shell -p nix`
 4. Now you're in a shell with Nix available in your $PATH. To build the AppImage, run `nix build github:emmanuelrosa/gossip-appimage#gossip-minimal-appimage`
-5. The build process will create a symlink named `result` pointing to the AppImage in the Nix store. The Nix store won't be available once your exit `nix-portable`, therefore, you'll need to copy the AppImage out of the Nix store. Run `cp ./result ./Gossip-minimal.AppImage`
+5. The build process will create a symlink named `result` pointing to the AppImage in the Nix store. Run `cp ./result ./Gossip-minimal-x86_64.AppImage`
 6. Now, exit `nix-portable` by executing `exit`
-7. Finally, make the AppImage executable. Ex. `chmod u+x Gossip-minimal.AppImage`
+7. Finally, make the AppImage executable. Ex. `chmod u+x Gossip-minimal-x86_64.AppImage`
 
-Now you can execute the `Gossip-minimal.AppImage`!
+Now you can execute the `Gossip-minimal-x86_64.AppImage`!
 
-## Supported Linux distributions
+To run the AppImage you need a host Linux operating system with:
+
+- A Linux kernel with support for fuse (CONFIG_FUSE_FS), mount namespaces (CONFIG_MNT_NS) and user namespaces (CONFIG_UTS_NS).
+- The FUSE utilities, namely `fusermount`. It's probably contained in a package named `fuse`.
+- A Mesa OpenGL DRI driver for your GPU. Gossip is not visually demanding, so you don't need hardware acceleration. The Mesa llvmpipe software renderer is enough; If you can run `glxgears`, then you're good to go.
+
+Note: The AppImage includes the Mesa OpenGL drivers, and Gossip will use them (because loading the host OS drivers is unreliable). But, you also need the drivers on the host OS so that Xorg can find them and configure itself correctly. Also, if you end up having to install the Mesa OpenGL drivers, you'll need to restart Xorg for the change to take effect.
+
+To clean up the build artifacts, delete the symlink `result`, the executable `nix-portable`, and the directory `$HOME/.nix-portable`.
+
+## Packages
+
+This Nix flake includes the following packages:
+
+- **gossip-minimal-nixgl**: This is a wrapper which launches Gossip using **nanoNixGL**, which is a tiny version of [nixGL](https://github.com/nix-community/nixGL). nixGL makes it so that Nix packages which depend on OpenGL can run on Linux distributions other than NixOS, as long as the Nix package manager is installed.
+- **gossip-minimal-appimage**: This is an AppImage of **gossip-minimal-nixgl**. No Nix store is required on the host OS to run the AppImage.
+- **gossip-minimal-shell-appimage**: This is the same as **gossip-minimal-appimage** but instead of running Gossip it drops you into a busybox shell. This package is for troubleshooting the chroot environment under which Gossip runs.
+
+Why is the AppImage named minimal? The AppImage is based on the Gossip Debian package, which doesn't have all of the compile-time options enabled. The name *minimal* leaves room for another AppImage which contains *all* of the Gossip compile-time options enabled. This would be a mega-fat AppImage.
+
+## Why is the AppImage so fat?
+
+This AppImage is built with the Nix package manager. Nix can be thought of as a build system which *leaves no dependency behind*. This means that Nix naturally builds packages with full awareness of every single required dependency. In fact, it's very difficult to get Nix to ignore a dependency. There's really no other package manager, except perhaps guix, which can do that :)
+
+This leads to an AppImage which, true to the pure vision of an executable which runs everywhere, contains all of it's dependencies. The price to pay for this robustness is an AppImage which weighs in at about 370 MB.
+
+## "Supported" Linux distributions
 
 This Gossip AppImage has been spotted in the wild running on the following x64_64 Linux distros:
 
 - Fedora 39 [^1]
 - Manjaro
 - Ubuntu 23.10
+- Void Linux (musl)
 
-If you run the AppImage successfully on another Linux distro, let me know at npub18eynzyyrx0v46qjnvtj6mvekpxlfnkq06e3zfd6q9487vty0lfaszucvu7
+Yes, that's right! A single AppImage can run on glibc and musl. That's because the AppImage *includes* glibc. Unfortunately, I haven't had success with Alpine Linux, though :(
+
+If you run the AppImage successfully on another Linux distro, let me know the juicy details at npub18eynzyyrx0v46qjnvtj6mvekpxlfnkq06e3zfd6q9487vty0lfaszucvu7
 
 [^1]: By default the Fedora installer uses BTRFS with asynchronous discards for the root filesystem. This is not ideal for Gossip because it uses a database which makes heavy use of random writes. BTRFS random write IO throughput is supar with asynchronous discards disabled. With asynchronous discards enabled, the performance is *TERRIBLE!* In short, it causes Gossip to hang while using the database. If the root filesystem is something else, such as ext4 or xfs, then Gossip works just fine on Fedora.
 
@@ -41,12 +71,3 @@ Next, this Nix flake takes the aforementioned Gossip Nix package and wraps it in
 Finally, [nix-appimage](https://github.com/ralismark/nix-appimage) is used to build an AppImage using the wrapped Gossip Nix package.
 
 When the AppImage is executed, after the usual AppImage bootstrap process the `AppRun` entry point bind-mounts the Nix store that's included in the AppImage squashfs filesystem, and then it runs a launcher script. The launcher script of the Gossip-minimal.AppImage sets the LD_LIBRARY_PATH such that the Linux linker `ld` (the program which basically runs Linux executables, resolves OpenGL libraries using the Mesa drivers included in the AppImage. Using such a *fat* AppImage should allow for good compatibility with many Linux distributions.
-
-## Packages
-
-This Nix flake includes the following packages:
-
-- *gossip-minimal-nixgl*: This is a wrapper which launches Gossip using *nanoNixGL*, which is a tiny version of [nixGL](https://github.com/nix-community/nixGL). nixGL makes it so that Nix packages which depend on OpenGL can run on Linux distributions other than NixOS, as long as the Nix package manager is installed.
-- *gossip-minimal-appimage*: This is an AppImage of *gossip-minimal-nixgl*. No Nix store is required on the host OS.
-- *gossip-minimal-shell-appimage*: This is the same as *gossip-minimal-appimage* but instead of running Gossip it drops you into a busybox shell. This package is for troubleshooting the chroot environment under which Gossip runs.
-
