@@ -1,20 +1,26 @@
-name: "Build the AppImage"
+name: "Build and release the AppImage"
 on:
   workflow_dispatch:
 jobs:
   build:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: cachix/install-nix-action@v22
-      with:
-        github_access_token: ${{ secrets.GITHUB_TOKEN }}
-    - uses: "marvinpinto/action-automatic-releases@latest"
-      with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        prerelease: true
-        automatic_release_tag: latest
-        files: |            
-          *.AppImage
-    - run: nix build .#gossip-minimal-appimage
-    - run: mv ./result ./Gossip-${{ github.ref_name }}-minimal-x86_64.AppImage
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: install-nix
+        uses: cachix/install-nix-action@v22
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}    
+      - name: build-appimage
+        run: nix build .#gossip-minimal-appimage
+      - name: rename-appimage
+        run: mv ./result ./Gossip-${{ github.ref_name }}-minimal-x86_64.AppImage
+      - name: release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          prerelease: true
+          files: |
+            *.AppImage
