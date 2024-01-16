@@ -24,11 +24,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1704313755,
-        "narHash": "sha256-nCeSn4EI+/G/ZT4vZor9YcKrqISO/W87Y4rpm5wPeaE=",
+        "lastModified": 1705365176,
+        "narHash": "sha256-fjA6zZUB4v2JtQK96jrFq85rQhESaAM867/jO6MX6OI=",
         "owner": "emmanuelrosa",
         "repo": "erosanix",
-        "rev": "e4f3d602d59d1a558d35d27bd53724be0be1a83d",
+        "rev": "6570cbe7151eebfad8820876de7197fd1c3fc6d8",
         "type": "github"
       },
       "original": {
