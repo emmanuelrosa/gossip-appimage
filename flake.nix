@@ -88,7 +88,7 @@
         ${pkgs.busybox}/bin/busybox ash
       '';
     in {
-      gossip-minimal-nixgl = pkgs.callPackage ({
+      gossip-nixgl = pkgs.callPackage ({
         stdenv
         , bash
         , writeScript
@@ -98,7 +98,7 @@
       }: let
         launcher = mkLauncher { inherit writeScript bash nixGL gossip; };
       in stdenv.mkDerivation {
-        pname = "gossip-minimal-nixgl";
+        pname = "gossip-nixgl";
         version = gossip.version;
         src = gossip;
         dontUnpack = true;
@@ -126,9 +126,9 @@
            inherit mkLauncher; 
          };
 
-      gossip-minimal-appimage = nix-appimage.bundlers."${system}".default self.packages."${system}".gossip-minimal-nixgl;
+      gossip-appimage = nix-appimage.bundlers."${system}".default self.packages."${system}".gossip-nixgl;
 
-      gossip-minimal-shell-appimage = nix-appimage.bundlers."${system}".default (self.packages."${system}".gossip-minimal-nixgl.override {
+      gossip-shell-appimage = nix-appimage.bundlers."${system}".default (self.packages."${system}".gossip-nixgl.override {
         mkLauncher = mkDebugLauncher;
       });
     };

@@ -14,9 +14,9 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}    
       - name: build-appimage
-        run: nix build .#gossip-minimal-appimage
+        run: nix build .#gossip-appimage
       - name: rename-appimage
-        run: mv ./result ./Gossip-${{ github.ref_name }}-minimal-x86_64.AppImage
+        run: mv ./result ./Gossip-${{ github.ref_name }}-x86_64.AppImage
       - name: release
         uses: softprops/action-gh-release@v1
         with:
