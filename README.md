@@ -46,16 +46,23 @@ This leads to an AppImage which, true to the pure vision of an executable which 
 
 This Gossip AppImage has been spotted in the wild running on the following x64_64 Linux distros:
 
-- Fedora 39 [^1]
+- Bedrock Linux [^1]
+- Fedora 39 [^2]
 - Manjaro
 - Ubuntu 23.10
 - Void Linux (musl)
 
-Yes, that's right! A single AppImage can run on glibc and musl. That's because the AppImage *includes* glibc. Unfortunately, I haven't had success with Alpine Linux, though :(
+Yes, that's right! A single AppImage can run on glibc and musl. That's because the AppImage *includes* glibc.
 
 If you run the AppImage successfully on another Linux distro, let me know the juicy details at npub18eynzyyrx0v46qjnvtj6mvekpxlfnkq06e3zfd6q9487vty0lfaszucvu7
 
-[^1]: By default the Fedora installer uses BTRFS with asynchronous discards for the root filesystem. This is not ideal for Gossip because it uses a database which makes heavy use of random writes. BTRFS random write IO throughput is supar with asynchronous discards disabled. With asynchronous discards enabled, the performance is *TERRIBLE!* In short, it causes Gossip to hang while using the database. If the root filesystem is something else, such as ext4 or xfs, then Gossip works just fine on Fedora.
+[^1]: Because the AppImage `AppRun` creates a `chroot`, you can only run the AppImage from the stratum which owns PID 1 (ex. `brl which 1`); Bedrock Linux uses `chroot` for the other strata, and you can't create a `chroot` within a `chroot`.
+
+[^2]: By default the Fedora installer uses BTRFS with asynchronous discards for the root filesystem. This is not ideal for Gossip because it uses a database which makes heavy use of random writes. BTRFS random write IO throughput is supar with asynchronous discards disabled. With asynchronous discards enabled, the performance is *TERRIBLE!* In short, it causes Gossip to hang while using the database. If the root filesystem is something else, such as ext4 or xfs, then Gossip works just fine on Fedora.
+
+Conversely, the Gossip AppImage is known to be allergic to some Linux distributions:
+
+- Alpine Linux
 
 ## How does it work?
 
