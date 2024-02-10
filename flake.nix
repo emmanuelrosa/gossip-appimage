@@ -126,7 +126,9 @@
            inherit mkLauncher; 
          };
 
+      gossip-full-nixgl = self.packages."${system}".gossip-nixgl.override { gossip = erosanixPkgs.gossip-full; };
       gossip-appimage = nix-appimage.bundlers."${system}".default self.packages."${system}".gossip-nixgl;
+      gossip-full-appimage = nix-appimage.bundlers."${system}".default self.packages."${system}".gossip-full-nixgl;
 
       gossip-shell-appimage = nix-appimage.bundlers."${system}".default (self.packages."${system}".gossip-nixgl.override {
         mkLauncher = mkDebugLauncher;

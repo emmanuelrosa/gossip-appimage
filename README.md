@@ -33,6 +33,7 @@ To clean up the build artifacts, delete the symlink `result`, the executable `ni
 This Nix flake includes the following packages:
 
 - **gossip-nixgl**: This is a wrapper which launches Gossip using **nanoNixGL**, which is a tiny version of [nixGL](https://github.com/nix-community/nixGL). nixGL makes it so that Nix packages which depend on OpenGL can run on Linux distributions other than NixOS, as long as the Nix package manager is installed.
+- **gossip-full-nixgl**: This is the same as `gossip-nixgl` but Gossip is built from source with support for video playback and CJK fonts enabled.
 - **gossip-appimage**: This is an AppImage of **gossip-nixgl**. No Nix store is required on the host OS to run the AppImage.
 - **gossip-shell-appimage**: This is the same as **gossip-appimage** but instead of running Gossip it drops you into a busybox shell. This package is for troubleshooting the chroot environment under which Gossip runs.
 

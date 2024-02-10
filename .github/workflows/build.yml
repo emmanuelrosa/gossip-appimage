@@ -17,6 +17,10 @@ jobs:
         run: nix build .#gossip-appimage
       - name: rename-appimage
         run: mv ./result ./Gossip-${{ github.ref_name }}-x86_64.AppImage
+      - name: build-full-appimage
+        run: nix build .#gossip-full-appimage
+      - name: rename-full-appimage
+        run: mv ./result ./Gossip-full-${{ github.ref_name }}-x86_64.AppImage
       - name: release
         uses: softprops/action-gh-release@v1
         with:
